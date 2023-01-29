@@ -20,7 +20,7 @@ const saveMessage = async (to, from, content, type, extension = null) => {
 
 const getMessage = async (from) => {
   return new Promise((resolve, reject) => {
-    messageModel.find({ from }, "*", (err, messages) => {
+    messageModel.find({ from }, "", (err, messages) => {
       if (err) reject(err);
       resolve(messages);
     });
