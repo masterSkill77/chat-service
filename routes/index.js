@@ -25,19 +25,24 @@ router.post(
   }
 );
 
-router.get("/:id", param("id").isNumeric(), (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+router.get(
+  "/:me/:user",
+  param("me").isNumeric(),
+  param("user").isNumeric(),
+  (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const me = req.params.me;
+    user = req.params.user;
+    messageService
+      .getMessage(me, user)
+      .then((data) => {
+        res.json(data);
+      })
+      .catch((e) => res.status(500).json(e));
   }
-  const id = req.params.id;
-
-  messageService
-    .getMessage(id)
-    .then((data) => {
-      res.json(data);
-    })
-    .catch((e) => res.status(500).json(e));
-});
+);
 
 module.exports = router;

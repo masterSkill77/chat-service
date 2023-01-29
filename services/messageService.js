@@ -18,11 +18,14 @@ const saveMessage = async (to, from, content, type, extension = null) => {
   });
 };
 
-const getMessage = async (from) => {
+const getMessage = async (to, from) => {
   return new Promise((resolve, reject) => {
-    messageModel.find({ from }, "", (err, messages) => {
+    messageModel.find({ from, to }, "", (err, messagesFrom) => {
       if (err) reject(err);
-      resolve(messages);
+      messageModel.find({ to: from, from: to }, "", (err, messagesTo) => {
+        if (err) reject(err);
+        resolve(...messagesFrom, ...messagesTo);
+      });
     });
   });
 };
