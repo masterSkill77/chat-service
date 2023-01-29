@@ -3,16 +3,18 @@
 /**
  * Module dependencies.
  */
-
+require("dotenv").config();
 var app = require("../app");
+
 var debug = require("debug")("chat-service:server");
 var http = require("http");
+const { Server } = require("socket.io");
 
 /**
  * Get port from environment and store in Express.
  */
 
-var port = normalizePort(process.env.PORT || "3000");
+var port = normalizePort(process.env.PORT || "4000");
 app.set("port", port);
 
 /**
@@ -84,3 +86,17 @@ function onListening() {
   var bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
   debug("Listening on " + bind);
 }
+const io = new Server(server, {
+  cors: {
+    origin: [process.env.FRONTEND_APP_URL],
+  },
+});
+
+io.on("connection", (socket) => {
+  socket.on("client_join", (data) => {
+    socket.join(data.id);
+  });
+
+  
+
+});
