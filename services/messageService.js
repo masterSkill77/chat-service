@@ -24,7 +24,7 @@ const getMessage = async (to, from) => {
       if (err) reject(err);
       messageModel.find({ to: from, from: to }, "", (err, messagesTo) => {
         if (err) reject(err);
-        resolve(...messagesFrom, ...messagesTo);
+        resolve([...messagesFrom, ...messagesTo]);
       });
     });
   });

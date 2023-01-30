@@ -9,6 +9,7 @@ var app = require("../app");
 var debug = require("debug")("chat-service:server");
 var http = require("http");
 const { Server } = require("socket.io");
+const { saveMessage, getMessage } = require("../services/messageService");
 
 /**
  * Get port from environment and store in Express.
@@ -93,9 +94,15 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-  socket.on("client_join", (data) => {
-    socket.removeAllListeners();
-    socket.join(data.id);
-    io.to(data.id).emit("joined");
+  socket.on("client_join", (user) => {
+    socket.join(user.id);
+    io.to(user.id).emit("joined");
+  });
+  socket.on("send_message", async (data) => {
+    await saveMessage(data.toUser.id, data.fromUser.id, data.message, "TEXT");
+    const messages = await getMessage(data.toUser.id, data.fromUser.id).then(
+      (data) => data
+    );
+    io.to(data.toUser.id).emit("message_received", messages);
   });
 });
