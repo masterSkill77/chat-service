@@ -23,7 +23,6 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 app.set("view engine", "ejs");
-app.use("/", indexRouter);
 app.use("/api/v1", indexRouter);
 
 // catch 404 and forward to error handler
