@@ -89,7 +89,7 @@ function onListening() {
 }
 const io = new Server(server, {
   cors: {
-    origin: [process.env.FRONTEND_APP_URL],
+    origin: "*",
   },
 });
 
@@ -103,8 +103,9 @@ io.on("connection", (socket) => {
     const messages = await getMessage(data.toUser.id, data.fromUser.id).then(
       (data) => data
     );
+    io.to(data.toUser.id).emit("message");
     io.to(data.toUser.id).emit("message_received", {
-      from: data.fromUser.id,
+      from: data.fromUser,
       messages,
     });
   });

@@ -2,7 +2,7 @@ const { now } = require("mongoose");
 const messageModel = require("./../schemas/MessageSchema");
 
 const saveMessage = async (to, from, content, type, extension = null) => {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const message = new messageModel({
       to,
       from,
@@ -11,7 +11,7 @@ const saveMessage = async (to, from, content, type, extension = null) => {
       extension,
       time: now(),
     });
-    message.save((error, data) => {
+    await message.save((error, data) => {
       if (error) return reject(error);
       resolve(data);
     });
