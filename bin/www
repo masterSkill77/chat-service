@@ -9,7 +9,7 @@ var app = require("../app");
 var debug = require("debug")("chat-service:server");
 var http = require("http");
 const { Server } = require("socket.io");
-const { saveMessage, getMessage } = require("../services/messageService");
+const { saveMessage } = require("../services/messageService");
 
 /**
  * Get port from environment and store in Express.
@@ -118,13 +118,17 @@ io.on("connection", (socket) => {
     socket.join(me);
     io.to(me).emit("joined");
   });
-  socket.on("send_message", async (data) => {
-    await saveMessage(data.toUser.id, me, data.message, "TEXT");
-    const messages = await getMessage(data.toUser.id, me).then((data) => data);
-    io.to(String(data.toUser.id)).emit("message");
-    io.to(String(data.toUser.id)).emit("message_received", {
-      from: socket.data.user,
-      messages,
-    });
+  // Enregistre le message, le transmet au destinataire et renvoie le message enregistré à l'émetteur
+  socket.on("send_message", async (data, ack) => {
+    try {
+      const saved = await saveMessage(data.toUser.id, me, data.message, "TEXT");
+      io.to(String(data.toUser.id)).emit("message_received", {
+        from: socket.data.user,
+        message: saved,
+      });
+      if (typeof ack === "function") ack({ ok: true, message: saved });
+    } catch (error) {
+      if (typeof ack === "function") ack({ ok: false });
+    }
   });
 });
