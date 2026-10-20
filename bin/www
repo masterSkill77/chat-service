@@ -10,6 +10,12 @@ var debug = require("debug")("chat-service:server");
 var http = require("http");
 const { Server } = require("socket.io");
 const { saveMessage } = require("../services/messageService");
+const { areFriends } = require("../services/friendshipService");
+
+// Profil public de l'émetteur : jamais l'e-mail ni les quotas
+function publicUser(user) {
+  return { id: user.id, name: user.name, lastname: user.lastname, username: user.username };
+}
 
 /**
  * Get port from environment and store in Express.
@@ -89,7 +95,7 @@ function onListening() {
 }
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: process.env.CORS_ALLOWED_ORIGINS || "http://localhost:5180",
   },
 });
 
@@ -121,9 +127,14 @@ io.on("connection", (socket) => {
   // Enregistre le message, le transmet au destinataire et renvoie le message enregistré à l'émetteur
   socket.on("send_message", async (data, ack) => {
     try {
+      // Messagerie réservée aux amis confirmés
+      if (!(await areFriends(me, data.toUser.id))) {
+        if (typeof ack === "function") ack({ ok: false, error: "NOT_FRIENDS" });
+        return;
+      }
       const saved = await saveMessage(data.toUser.id, me, data.message, "TEXT");
       io.to(String(data.toUser.id)).emit("message_received", {
-        from: socket.data.user,
+        from: publicUser(socket.data.user),
         message: saved,
       });
       if (typeof ack === "function") ack({ ok: true, message: saved });
