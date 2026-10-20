@@ -7,6 +7,7 @@ var cors = require("cors");
 var database = require("./config/db");
 
 var indexRouter = require("./routes/index");
+var internalAuth = require("./middlewares/internalAuth");
 
 var app = express();
 
@@ -23,7 +24,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 app.set("view engine", "ejs");
-app.use("/api/v1", indexRouter);
+app.use("/api/v1", internalAuth, indexRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

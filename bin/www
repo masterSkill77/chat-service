@@ -15,7 +15,7 @@ const { saveMessage, getMessage } = require("../services/messageService");
  * Get port from environment and store in Express.
  */
 
-var port = normalizePort(process.env.PORT || "4000");
+var port = normalizePort(process.env.PORT || "4001");
 app.set("port", port);
 
 /**
@@ -93,19 +93,37 @@ const io = new Server(server, {
   },
 });
 
+// Authentification : le token Sanctum est vérifié auprès de Laravel.
+// L'identité retenue est celle renvoyée par Laravel, jamais celle envoyée par le client.
+io.use(async (socket, next) => {
+  const token = socket.handshake.auth && socket.handshake.auth.token;
+  if (!token) return next(new Error("unauthorized"));
+
+  try {
+    const response = await fetch(process.env.AUTH_USER_URL, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    });
+    if (!response.ok) return next(new Error("unauthorized"));
+    socket.data.user = await response.json();
+    next();
+  } catch (error) {
+    next(new Error("unauthorized"));
+  }
+});
+
 io.on("connection", (socket) => {
-  socket.on("client_join", (user) => {
-    socket.join(user.id);
-    io.to(user.id).emit("joined");
+  const me = String(socket.data.user.id);
+
+  socket.on("client_join", () => {
+    socket.join(me);
+    io.to(me).emit("joined");
   });
   socket.on("send_message", async (data) => {
-    await saveMessage(data.toUser.id, data.fromUser.id, data.message, "TEXT");
-    const messages = await getMessage(data.toUser.id, data.fromUser.id).then(
-      (data) => data
-    );
-    io.to(data.toUser.id).emit("message");
-    io.to(data.toUser.id).emit("message_received", {
-      from: data.fromUser,
+    await saveMessage(data.toUser.id, me, data.message, "TEXT");
+    const messages = await getMessage(data.toUser.id, me).then((data) => data);
+    io.to(String(data.toUser.id)).emit("message");
+    io.to(String(data.toUser.id)).emit("message_received", {
+      from: socket.data.user,
       messages,
     });
   });
